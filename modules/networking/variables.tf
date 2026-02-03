@@ -96,9 +96,6 @@ variable "ecs_optimized_ami" {
   type        = string
 }
 
-[ec2-user@ip-172-31-23-81 ecs]$ cd ..
-[ec2-user@ip-172-31-23-81 modules]$ cd networking/
-[ec2-user@ip-172-31-23-81 networking]$ cat variable.tf
 # ───────────────────────────────────────────────
 # Existing variables (already in your file)
 # ───────────────────────────────────────────────
