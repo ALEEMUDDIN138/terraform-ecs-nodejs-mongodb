@@ -7,8 +7,8 @@ s3_bucket_name = "my-terraform-state-bucket-12345"
 dynamodb_table_name = "terraform-state-lock-aleem"
 
 # MongoDB Configuration
-mongodb_username = "sampleapp"
-mongodb_password = "admin@123"
+mongodb_username = "mongodbuser"
+mongodb_password = "mongodb@123"
 mongodb_host = "terraform-ecd--nodejs-m.d4odikf.mongodb.net"
 mongodb_database = "Terraform-ecd--nodejs-mangodb"
 
