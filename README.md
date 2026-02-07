@@ -48,7 +48,9 @@ This project deploys a Node.js application with MongoDB backend on AWS ECS using
 1. AWS CLI configured with appropriate permissions
 2. Terraform installed (>= 1.0)
 3. Docker installed
-4. MongoDB instance (Atlas or self-managed)
+4. Jenkins pipeline integration
+5. ECS rolling deployment support
+6. MongoDB instance (Atlas or self-managed)
 
 ## Setup Instructions
 
