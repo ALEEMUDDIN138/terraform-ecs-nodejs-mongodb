@@ -23,10 +23,12 @@ terraform-ecs-nodejs-mongodb/
 ├── variables.tf
 ├── outputs.tf
 ├── Dockerfile
+|__Jenkinsfile
 ├── terraform.tfvars.example
 ├── README.md
 |__ Terraform output.md
 └── ecs-comparison.md
+
 ```
 
 # Node.js with MongoDB on AWS ECS
