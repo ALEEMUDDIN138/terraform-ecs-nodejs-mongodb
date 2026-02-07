@@ -8,7 +8,7 @@ dynamodb_table_name = "terraform-state-lock-aleem"
 
 # MongoDB Configuration
 mongodb_username = "mongodbuser"
-mongodb_password = "mongodb@123"
+mongodb_password = "mongodb123"
 mongodb_host = "terraform-ecd--nodejs-m.d4odikf.mongodb.net"
 mongodb_database = "Terraform-ecd--nodejs-mangodb"
 
@@ -20,3 +20,5 @@ min_size = 1
 max_size = 3
 instance_type = "t3.small"
 key_name = "Virginia"
+image_tag = "1"
+
