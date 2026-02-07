@@ -13,7 +13,6 @@ terraform-ecs-nodejs-mongodb/
 │   ├── app.js
 │   ├── package.json
 │   ├── server.js
-│   └── .dockerignore
 ├── modules/
 │   ├── networking/
 │   ├── ecs/
@@ -23,6 +22,7 @@ terraform-ecs-nodejs-mongodb/
 ├── variables.tf
 ├── outputs.tf
 ├── Dockerfile
+│── .dockerignore
 |__Jenkinsfile
 ├── terraform.tfvars.example
 ├── README.md
