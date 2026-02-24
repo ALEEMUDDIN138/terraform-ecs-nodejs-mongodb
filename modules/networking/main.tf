@@ -2,7 +2,9 @@
 # NETWORKING MODULE
 ############################
 
-# Create VPC
+############################
+# VPC
+############################
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
@@ -13,7 +15,9 @@ resource "aws_vpc" "main" {
   }
 }
 
-# Create Public Subnets
+############################
+# PUBLIC SUBNETS
+############################
 resource "aws_subnet" "public" {
   count                   = length(var.public_subnet_cidrs)
   vpc_id                  = aws_vpc.main.id
@@ -26,7 +30,9 @@ resource "aws_subnet" "public" {
   }
 }
 
-# Create Private Subnets
+############################
+# PRIVATE SUBNETS
+############################
 resource "aws_subnet" "private" {
   count             = length(var.private_subnet_cidrs)
   vpc_id            = aws_vpc.main.id
@@ -38,7 +44,9 @@ resource "aws_subnet" "private" {
   }
 }
 
-# Create Internet Gateway
+############################
+# INTERNET GATEWAY
+############################
 resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.id
 
@@ -47,19 +55,53 @@ resource "aws_internet_gateway" "igw" {
   }
 }
 
-# Create ECS Security Group
-resource "aws_security_group" "ecs" {
-  name        = "${var.project_name}-ecs-sg"
-  description = "Allow traffic for ECS tasks"
-  vpc_id      = aws_vpc.main.id
+############################
+# PUBLIC ROUTE TABLE
+############################
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.main.id
 
-  ingress {
-    from_port   = 0
-    to_port     = 65535
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
   }
 
+  tags = {
+    Name = "${var.project_name}-public-rt"
+  }
+}
+
+############################
+# ASSOCIATE PUBLIC SUBNETS
+############################
+resource "aws_route_table_association" "public" {
+  count          = length(aws_subnet.public)
+  subnet_id      = aws_subnet.public[count.index].id
+  route_table_id = aws_route_table.public.id
+}
+
+############################
+# ECS SECURITY GROUP
+############################
+resource "aws_security_group" "ecs" {
+  name        = "${var.project_name}-ecs-sg"
+  description = "Allow ALB to ECS traffic"
+  vpc_id      = aws_vpc.main.id
+
+  ##########################
+  # ALLOW ALB → ECS ONLY
+  ##########################
+  ingress {
+    description     = "Allow ALB to ECS"
+    from_port       = 3000
+    to_port         = 3000
+    protocol        = "tcp"
+    cidr_blocks     = ["0.0.0.0/0"] # You can replace with ALB SG later
+  }
+
+  ##########################
+  # ALLOW OUTBOUND INTERNET
+  ##########################
   egress {
     from_port   = 0
     to_port     = 0
@@ -71,3 +113,4 @@ resource "aws_security_group" "ecs" {
     Name = "${var.project_name}-ecs-sg"
   }
 }
+
