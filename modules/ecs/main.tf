@@ -20,36 +20,96 @@ resource "aws_ecs_cluster" "main" {
 resource "aws_cloudwatch_log_group" "ecs" {
   name              = "/ecs/${var.project_name}"
   retention_in_days = 30
-
-  tags = {
-    Name = "${var.project_name}-logs"
-  }
 }
 
 ####################################
-# ECS Task Definition
+# IAM EXECUTION ROLE
+####################################
+resource "aws_iam_role" "ecs_task_execution_role" {
+  name = "${var.project_name}-ecs-task-execution-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Service = "ecs-tasks.amazonaws.com"
+      }
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "execution_policy" {
+  role       = aws_iam_role.ecs_task_execution_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+}
+
+####################################
+# TASK ROLE
+####################################
+resource "aws_iam_role" "ecs_task_role" {
+  name = "${var.project_name}-ecs-task-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Service = "ecs-tasks.amazonaws.com"
+      }
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+####################################
+# TASK DEFINITION
 ####################################
 resource "aws_ecs_task_definition" "app" {
   family                   = "${var.project_name}-task"
-  network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
+  network_mode             = "awsvpc"
   cpu                      = var.task_cpu
   memory                   = var.task_memory
-  execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
-  task_role_arn            = aws_iam_role.ecs_task_role.arn
+
+  execution_role_arn = aws_iam_role.ecs_task_execution_role.arn
+  task_role_arn      = aws_iam_role.ecs_task_role.arn
 
   container_definitions = jsonencode([
     {
-      name      = "app"
-      image     = var.app_image
+      name  = "app"
+
+      # FULL ECR IMAGE URI
+      image = "${var.ecr_repository_url}:${var.image_tag}"
+
       essential = true
+
       portMappings = [
         {
           containerPort = 3000
           protocol      = "tcp"
         }
       ]
+
+      ####################################
+      # ENV VARIABLES
+      ####################################
       environment = var.container_environment
+
+      ####################################
+      # SECRET FROM SECRETS MANAGER
+      ####################################
+      secrets = [
+        {
+          name      = "MONGO_URI"
+          valueFrom = var.mongo_secret_arn
+        }
+      ]
+
+      ####################################
+      # LOGGING
+      ####################################
       logConfiguration = {
         logDriver = "awslogs"
         options = {
@@ -60,14 +120,10 @@ resource "aws_ecs_task_definition" "app" {
       }
     }
   ])
-
-  tags = {
-    Name = "${var.project_name}-task-def"
-  }
 }
 
 ####################################
-# ECS Service (Fargate)
+# ECS SERVICE
 ####################################
 resource "aws_ecs_service" "main" {
   name            = "${var.project_name}-service"
@@ -76,74 +132,47 @@ resource "aws_ecs_service" "main" {
   desired_count   = var.desired_count
   launch_type     = "FARGATE"
 
-  network_configuration {
-    subnets          = var.public_subnet_ids
-    security_groups  = [var.ecs_security_group_id]
-    assign_public_ip = true
-  }
-
+  ####################################
+  # LOAD BALANCER
+  ####################################
   load_balancer {
     target_group_arn = var.alb_target_group_arn
     container_name   = "app"
     container_port   = 3000
   }
 
-  depends_on = [var.alb_listener]
-
-  tags = {
-    Name = "${var.project_name}-service"
+  ####################################
+  # NETWORKING
+  ####################################
+  network_configuration {
+    subnets          = var.public_subnet_ids
+    security_groups  = [var.ecs_security_group_id]
+    assign_public_ip = true
   }
-}
 
+  ####################################
+  # HEALTH CHECK GRACE
+  ####################################
+  health_check_grace_period_seconds = 60
+}
 ####################################
-# IAM Roles
+# ALLOW ECS TO READ SECRETS MANAGER
 ####################################
-# ECS Task Execution Role
-resource "aws_iam_role" "ecs_task_execution_role" {
-  name = "${var.project_name}-ecs-task-execution-role"
+resource "aws_iam_role_policy" "ecs_secrets_access" {
+  name = "${var.project_name}-ecs-secrets-access"
+  role = aws_iam_role.ecs_task_execution_role.id
 
-  assume_role_policy = jsonencode({
+  policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = {
-        Service = "ecs-tasks.amazonaws.com"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
+        ]
+        Resource = "*"
       }
-    }]
+    ]
   })
-
-  tags = {
-    Name = "${var.project_name}-ecs-task-execution-role"
-  }
-}
-
-resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_policy" {
-  role       = aws_iam_role.ecs_task_execution_role.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-}
-
-  locals {
-  service_name = "app-service"
- }
-
-
-# ECS Task Role
-resource "aws_iam_role" "ecs_task_role" {
-  name = "${var.project_name}-ecs-task-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = {
-        Service = "ecs-tasks.amazonaws.com"
-      }
-    }]
-  })
-
-  tags = {
-    Name = "${var.project_name}-ecs-task-role"
- }
 }
