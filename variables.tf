@@ -71,7 +71,7 @@ variable "mongodb_database" {
 variable "mongodb_ami_id" {
   description = "AMI ID to use for the MongoDB EC2 instance"
   type        = string
-  default     = "ami-052064a798f08f0d3" # Replace with a valid MongoDB AMI ID
+  default     = "ami-0de53d8956e8dcf80" # Replace with a valid MongoDB AMI ID
 }
 
 # ============ ECS CONFIG ============
@@ -134,5 +134,19 @@ variable "dynamodb_table_name" {
 variable "ecs_optimized_ami" {
   description = "ECS optimized AMI ID for EC2 instances"
   type        = string
-  default     = "ami-052064a798f08f0d3" # Example for us-east-1 (Amazon Linux 2 ECS-Optimized)
+  default     = "ami-0de53d8956e8dcf80" # Example for us-east-1 (Amazon Linux 2 ECS-Optimized)
+}
+
+# ============ Docker image tag ============
+variable "image_tag" {
+  description = "Docker image tag"
+  type        = string
+}
+
+################################
+# MONGODB SECRET
+################################
+variable "mongo_uri" {
+  description = "MongoDB connection string"
+  type        = string
 }
