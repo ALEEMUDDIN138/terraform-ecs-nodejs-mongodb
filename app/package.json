@@ -1,14 +1,15 @@
 {
-  "name": "nodejs-mongodb-app",
+  "name": "terraform-ecs-nodejs-mongodb",
   "version": "1.0.0",
-  "description": "Sample Node.js app with MongoDB",
-  "main": "server.js",
+  "description": "This project demonstrates deploying a simple **Node.js REST API** connected to **MongoDB**, containerized with **Docker**, and deployed on **AWS ECS (EC2 launch type)** using **Terraform** with an S3 backend and DynamoDB for state locking.",
+  "main": "test-mongo.js",
   "scripts": {
-    "start": "node server.js"
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "dependencies": {
-    "express": "^4.18.2",
-    "mongoose": "^7.5.0",
-    "dotenv": "^16.3.1"
+    "mongoose": "^8.22.0"
   }
 }
